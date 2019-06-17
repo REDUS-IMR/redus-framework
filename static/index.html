@@ -1,0 +1,98 @@
+<html>
+
+<head>
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+    <!-- Load polyfills to support older browsers -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es2015%2CMutationObserver"
+    crossorigin="anonymous"></script>
+
+    <!-- Load Axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- Load Vue followed by BootstrapVue -->
+    <script src="https://unpkg.com/vue@latest/dist/vue.min.js"></script>
+    <!--
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    -->
+
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/solid.css" integrity="sha384-QokYePQSOwpBDuhlHOsX0ymF6R/vLk/UQVz3WHa6wygxI5oGTmDTv8wahFOSspdm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/fontawesome.css" integrity="sha384-vd1e11sR28tEK9YANUtpIOdjGW14pS87bUBuOIoBILVWLFnS+MCX9T6MMf0VdPGq" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <h1 class="one">REDUS Cloud Framework</h1>
+    <h2 class="two">Experimental</h1>
+        <hr/>
+        <div id="ass-select">
+            <span v-if="visible">
+                <h2>Select an assessment to begin:</h2>
+
+                <p>Assessment:
+                    <select v-on:change="changeAss($event)" class="form-control" name="assessmentTitle">
+                        <option v-for="aE in assessmentTitles" v-bind:value="aE.id">{{aE.text}}</option>
+                    </select></p>
+                    <p>Year:
+                        <select v-on:change="checkValid($event)" class="form-control" name="assessmentYear">
+                            <option v-for="yr in initYear" v-bind:value="yr.text">{{yr.text}}</option>
+                        </select></p>
+                        <br />
+                        <div>
+                            <b-button variant="primary" v-bind:disabled="notValid" v-on:click="startProcess">Proceed</b-button>
+                        </div>
+                    </span>
+                    <span v-else="visible">
+                        <p class="font-weight-bold">Now working on: {{curr.ass}} {{curr.year}} <b-button variant="outline-primary"
+                            size="sm" v-on:click="changeProcess">change</b-button>
+                        </div>
+                    </span>
+                </div>
+
+                <div id="runtime" v-if="state.phase === 2">
+                        <b-tabs content-class="mt-3">
+                        <b-tab title="File Manager" :disabled="state.subprocLaunchVM !== 1" active>
+                            <b-embed type="iframe" v-bind:src="state.url1"></b-embed>
+                        </b-tab>
+                        <b-tab title="Console" :disabled="state.subprocLaunchVM !== 1">
+                            <b-embed type="iframe" v-bind:src="state.url2"></b-embed>
+                        </b-tab>
+                        <b-tab title="Logs" :disabled="state.subprocLaunchVM !== 1">
+                            <b-embed type="iframe" v-bind:src="state.url3"></b-embed>
+                        </b-tab>
+                    </b-tabs>
+                </div>
+
+                <!-- Modal -->
+                <div id="modalLoading">
+                    <b-modal id="modal-body" v-model="state.globalLoading" hide-footer no-close-on-esc no-close-on-backdrop
+                    hide-header-close>
+                    <template slot="modal-title">
+                        Provisioning is in progress...
+                    </template>
+                    <div class="d-block text-center">
+                        Creating virtual machine...
+                        <b-spinner v-if="state.subprocCreateVM === -1" type="grow" label="working..."></b-spinner>
+                        <i v-if="state.subprocCreateVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                        <i v-if="state.subprocCreateVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                        Preparing files...
+                        <b-spinner v-if="state.subprocPrepareFiles === -1" type="grow" label="working..."></b-spinner>
+                        <i v-if="state.subprocPrepareFiles === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                        <i v-if="state.subprocPrepareFiles === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                        Starting virtual machine...
+                        <b-spinner v-if="state.subprocLaunchVM === -1" type="grow" label="working..."></b-spinner>
+                        <i v-if="state.subprocLaunchVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                        <i v-if="state.subprocLaunchVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                    </div>
+                    <b-button class="mt-3" block @click="$bvModal.hide('modal-body')" :disabled="state.globalLoading === true">Close Me</b-button>
+                </b-modal>
+            </div>
+            <script src="index.js"></script>
+        </body>
+
+        </html>
