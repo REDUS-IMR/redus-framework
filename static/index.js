@@ -19,7 +19,7 @@
 
 // Global info
 
-var baseurl = "http://localhost:3000/v1"
+var baseurl = window.location.origin + "/v1"
 
 // Global shared store
 var store = {
