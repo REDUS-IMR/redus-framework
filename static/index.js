@@ -89,8 +89,32 @@ var assSelect = new Vue({
     el: '#ass-select',
     data: {
         visible: true,
+        configAvailable: false,
         curr: [],
         notValid: true,
+        reRenderEntries: 0,
+        availableSurveyProcess: [
+            { text: 'As Is', value: 'asis' },
+            { text: '(Official) Pre-computed values', value: 'remote' },
+            { text: 'Re-process using StoX', value: 'build' },
+            { text: 'Input manual values', value: 'manual' },
+        ],
+	    stsList:[
+            "Barents Sea Beaked redfish and Sebastes sp in Subareas I and II bottom trawl index in winter",
+            "Barents Sea Blue whiting bottom trawl index in winter",
+            "Barents Sea Golden redfish in Subareas I and II bottom trawl index in winter",
+            "Barents Sea Northeast Arctic cod bottom trawl index in winter",
+            "Barents Sea Northeast Arctic Greenland halibut bottom trawl index in winter",
+            "Barents Sea Northeast Arctic haddock bottom trawl index in winter",
+            "Barents Sea Norway redfish bottom trawl index in winter",
+            "North Sea NOR lesser sandeel acoustic abundance estimate in spring",
+            "North Sea Skagerrak Northern Shrimp Bottom Trawl Index",
+            "Norwegian Sea NOR Norwegian spring-spawning herring acoustic abundance index in Feb-Mar",
+            "Varanger Stad Northeast Arctic saithe acoustic index in autumn",
+            "Barents Sea Northeast Arctic cod acoustic index in winter",
+            "Barents Sea Northeast Arctic haddock acoustic index in winter",
+            "North Sea NOR IBTS Q3 DATRAS export"
+        ],
         assessmentTitles: [
             { text: '', id: '' },
             { text: 'North East Arctic Cod', id: 'neacod' },
@@ -111,8 +135,28 @@ var assSelect = new Vue({
         ]
     },
     methods: {
+        surveyProcessChange: function(event) {
+            selectedValue = event.target.value;
+            textId = event.target.id.split('_')[0]+'_surveytext'
+            textEl = document.getElementById(textId)
+            this.reRenderEntries += 1
+
+        },
+        getsurveyTitle: function() {
+            if(typeof this.curr.config != 'undefined' && typeof this.curr.config.survey.surveyName != 'undefined')
+                return this.curr.config.survey.surveyName
+            else
+                return ""
+        },
+        getsurveyEntries: function() {
+            if(typeof this.curr.config != 'undefined' && typeof this.curr.config.survey.entries != 'undefined')
+                return  this.curr.config.survey.entries
+            else
+                return ""
+        },
         changeAss: function (event) {
             this.curr.ass = event.target.value
+            this.curr.year = ''
             if (event.target.value == "neacod") {
                 this.initYear = this.neacodYear
             } else if (event.target.value == "neahad") {
@@ -120,10 +164,14 @@ var assSelect = new Vue({
             } else {
                 this.initYear = this.emptyYear
             }
+            this.checkValid()
         },
-        checkValid: function (event) {
+        changeYear: function(event) {
             this.curr.year = event.target.value
-            if (this.curr.ass != '' && this.curr.year != '') {
+            this.checkValid()
+        },
+        checkValid: function () {
+            if (this.curr.ass == 'neacod' && this.curr.year != '') {
                 this.notValid = false
             } else {
                 this.notValid = true
@@ -135,7 +183,7 @@ var assSelect = new Vue({
 
             // Get an ID from server
             axios
-            .post(baseurl + "/createNew")
+            .post(baseurl + "/createNew", {config: this.curr.config})
             .then(response => {
                 store.setIDAction(response.data.id)
             })
@@ -166,7 +214,27 @@ var assSelect = new Vue({
                 // An error occurred
             })
             //this.visible = true
-        }
+        },
+        startConfig: function () {
+            // TODO: Start all process (get ID, start docker, get IP, etc.)
+            //store.startLoading()
+
+            // Get an ID from server
+            axios
+            .post(baseurl + "/getConfig", {
+                assID: this.curr.ass,
+                assYR: this.curr.year,
+            })
+            .then(response => {
+                this.curr.config = response.data.config
+                this.configAvailable = true
+            })
+            .catch(error => {
+                console.log(error)
+                //TODO, proper error message
+            })
+            .finally(() => console.log("Opening config panel..."))
+        },
     }
 })
 
@@ -175,6 +243,12 @@ var runTime = new Vue({
     el: '#runtime',
     data: {
         state: store.state
+    },
+    methods: {
+        refreshBelow: function(x) {
+            //alert("refreshing:" + x);
+            x.src = x.src;
+        },
     }
 })
 

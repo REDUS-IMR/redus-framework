@@ -38,12 +38,20 @@ const DMkeyValueObject = {
     'scaleway-commercial-type': 'START1-S',
     'scaleway-image': 'ubuntu-xenial',
 };
-*/
+
+
 const DMkeyValueObject = {
     'driver': 'virtualbox',
     'virtualbox-cpu-count': '2',
     'virtualbox-memory' : '2048'
 }
+*/
+
+const DMkeyValueObject = {
+    'driver': 'kvm',
+    'kvm-memory' : '2048'
+}
+
 
 // Docker CLI
 var dockerCLI = require('docker-cli-js');
@@ -76,10 +84,11 @@ var idToip = []
 
 // PrepareFile function
 
-async function prepareFile(id, path) {
+async function prepareFile(id, path, config) {
     const http = require('http');
     const targz = require('targz');
 
+    
     // Stats
     let filePrepared = false
 
@@ -141,6 +150,77 @@ async function prepareFile(id, path) {
     // Put UUID in id.conf (for proxy purposes later)
     fs.writeFileSync(path + "/docker-redus-pipeline/projects/id.conf", id);
 
+
+    // Configuration
+    console.log(config)
+
+    if(config != null) {
+        // Prepare conf directory 
+        // TODO: use conf
+        confPath = path + "/docker-redus-pipeline/projects/neacod-2018/redus"
+
+        // Read template
+        confTemplate = fs.readFileSync("extra/redus.yaml", "utf8")
+        const YAML = require('yaml')
+        txtTemplate = YAML.parse(confTemplate)
+
+        console.log(txtTemplate)
+        
+        // Get survey entries
+        const sEntries = config.survey.entries
+
+        let iter = 0
+
+        sEntries.forEach(function(element){
+            console.log(element);
+            if(element.process!='asis' && element.process!="manual") {
+
+                iter++
+                fl = element.fleetName.split(" ")
+                fleet = fl[fl.length-1]
+                if(element.process == 'remote') {
+                    sourceAge = true
+                    sourceYear = true
+                    buildConf = ''
+                }else if(element.process == 'build') {
+                    sourceAge = true
+                    sourceYear = false
+                    // Process xml here
+                    console.log(element.buildParameters)
+
+                    if (!fs.existsSync(confPath)){
+                        fs.mkdirSync(confPath);
+                    }
+
+                    // Write config
+                    fs.writeFileSync(confPath + "/" + fleet + ".xml" , element.buildParameters.trim())
+
+                    // Write config
+                    buildConf = "redus/" + fleet + ".xml"
+
+                    element.remoteSource = ''
+                }
+                prefix = 'survey.update.'
+                txtTemplate.default[prefix + iter + '.mode'] = element.process
+                txtTemplate.default[prefix + iter + '.surveyBuildConf'] = buildConf
+                txtTemplate.default[prefix + iter + '.header'] = fleet
+                txtTemplate.default[prefix + iter + '.stssource'] = element.remoteSource
+                txtTemplate.default[prefix + iter + '.stsdate'] = ''
+                txtTemplate.default[prefix + iter + '.useSourceAge'] = sourceAge
+                txtTemplate.default[prefix + iter + '.useSourceYear'] = sourceYear
+
+                // Write conf
+                if (!fs.existsSync(confPath)){
+                    fs.mkdirSync(confPath);
+                }
+
+                fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
+            
+            }
+        });
+        console.log(txtTemplate)
+    }
+
     filePrepared = true
 
     fs.writeFileSync(path + "/" + "prepareFile.status", "1");
@@ -184,7 +264,7 @@ async function createMachine(id, path) {
     let DMenv
     if (!vmCreateFail) {
         try {
-            DMenv = await dockerMachine2.command('inspect '+ id)
+            DMenv = await dockerMachine2.command('ip '+ id)
         } catch (err) {
             fs.writeFileSync(path + "/" + "prepareVM.status", "2");
             vmGotIPFail = true
@@ -196,7 +276,7 @@ async function createMachine(id, path) {
 
     if (!vmGotIPFail) {
         //vmIP = new URL(DMenv.DOCKER_HOST).hostname
-        vmIP = DMenv.machine.Driver.IPAddress
+        vmIP = DMenv.raw.replace(/\\n|\"/g, "");
 
         console.log("Got IP: " + vmIP)
 
@@ -266,9 +346,9 @@ async function runVM(id, path) {
 }
 
 
-async function initGlobal(id, path) {
+async function initGlobal(id, path, config) {
         // Do machine creation and preparing file in parallel
-        const [result1, result2] = await Promise.all([createMachine(id, path), prepareFile(id, path)]);
+        const [result1, result2] = await Promise.all([createMachine(id, path), prepareFile(id, path, config)]);
 
         // Run machine (do it async)
         const result3 = runVM(id, path)
@@ -294,14 +374,31 @@ async function logger(ctx, next) {
     }
 }
 
-// response
+// JSON escape
+function jsonEscape(str)  {
+    return str.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "    ");
+}
 
+
+// response
 async function respond(ctx, next) {
 
     const body = ctx.request.body;
 
     // Allow any requests origin for now
     ctx.set('Access-Control-Allow-Origin', '*');
+
+    if('/v1/getConfig' == ctx.url) {
+        // Get all posted variable
+        let assID = body.assID
+        let yrID = body.assYR
+        //TODO: Get conf on the fly:
+
+        let rawdata = fs.readFileSync('extra/'+assID+'-'+yrID+'.json', 'utf8');
+        let config = JSON.parse(jsonEscape(rawdata));
+        ctx.body = config
+        return;
+    }
 
     if ('/v1/getAssFiles' == ctx.url) {
         await send(ctx, "extra/neacod-2018.tgz")
@@ -341,9 +438,11 @@ async function respond(ctx, next) {
     let env
     // Make new docker node
     if ('/v1/createNew' == ctx.url) {
-        const uuidv4 = require('uuid/v4');
+        // Process config!
+        const reqconfig = body.config
 
         // Getting ID
+        const uuidv4 = require('uuid/v4');
         const newid = await uuidv4().split("-").join(".");
         let path = os.tmpdir() + "/" + newid;
 
@@ -353,7 +452,7 @@ async function respond(ctx, next) {
         console.log("Directory created: " + path)
 
         // Go INIT!
-        initGlobal(newid, path)
+        initGlobal(newid, path, reqconfig)
 
         ctx.body = { id: newid };
         return;
@@ -390,7 +489,7 @@ const app = module.exports = new Koa();
 
 // Parse request body properly
 app.use(koaBody({
-    jsonLimit: '1kb'
+    jsonLimit: '1mb'
 }));
 
 // Use compression for appropriate types
