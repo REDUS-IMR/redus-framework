@@ -29,7 +29,7 @@ const send = require('koa-send')
 const httpProxy = require('http-proxy');
 
 // Docker machine CLI
-const DockerMachineCLI = require('dockermachine-cli-js');
+//const DockerMachineCLI = require('dockermachine-cli-js');
 /*
 const DMkeyValueObject = {
     'driver': 'scaleway',
@@ -39,30 +39,28 @@ const DMkeyValueObject = {
     'scaleway-image': 'ubuntu-xenial',
 };
 
-
 const DMkeyValueObject = {
     'driver': 'virtualbox',
     'virtualbox-cpu-count': '2',
     'virtualbox-memory' : '2048'
 }
-*/
 
 const DMkeyValueObject = {
     'driver': 'kvm',
     'kvm-memory' : '2048'
 }
 
-
 // Docker CLI
 var dockerCLI = require('docker-cli-js');
 
 var DockerOptions = dockerCLI.Options;
 var Docker = dockerCLI.Docker;
-
+*/
 // Other packages
 const fs = require('fs');
 const os = require('os');
 const util = require('util');
+const exec = util.promisify(require('child_process').exec);
 
 // Proxy
 const proxy = httpProxy.createProxyServer({
@@ -81,6 +79,9 @@ proxy.on('error', function (err, req, res) {
 
 // Global variable for id to IP mapping
 var idToip = []
+var idToport = []
+var startport = 8000
+var idinc = 0
 
 // PrepareFile function
 
@@ -230,11 +231,28 @@ async function prepareFile(id, path, config) {
 
 }
 
+async function createMachineNop(id, path) {
+
+    console.log("Creating machine -- Start")
+    // Define port
+    var vmPort = startport + idinc
+    //Increment idinc
+    idinc++
+
+    idToip[id] = "127.0.0.1"
+    idToport[id] = vmPort
+
+    fs.writeFileSync(path + "/" + "prepareVM.status", "1");
+    fs.writeFileSync(path + "/" + "VM.IP", "127.0.0.1");
+
+    console.log("Creating machine -- Finish")
+    return(["127.0.0.1"])
+}
+
 async function createMachine(id, path) {
 
     // Stats
     let vmCreateFail = false;
-    //let vmStartFail = false;
     let vmGotIPFail = false;
     let vmIP = "";
 
@@ -299,19 +317,21 @@ async function runVM(id, path) {
     console.log("Starting VM -- start")
 
     let dockerfilePath = path + "/docker-redus-pipeline"
-
+/*
     var options = new DockerOptions(
         id,
         dockerfilePath
     );
 
     var docker = new Docker(options);
-
+*/
     let data
 
     // Build image
     try {
-        data = await docker.command('build --pull --rm -t ' + id + ' .')
+         data = await exec('podman build --pull --rm -t ' + id + ' .',  {
+                           cwd: dockerfilePath
+                         })
     } catch (err) {
         if(err) {
             console.log(err);
@@ -320,11 +340,15 @@ async function runVM(id, path) {
         }
     }
 
-    console.log('data = ', data);
+    console.log('data = ', data.stdout);
 
-    // Start VM
+    // Get port
+    var vmPort = idToport[id]
+
     try {
-        data = await docker.command('run --name ' + id + '-run -p 8888:8888 -dit ' + id)
+        data = await exec('podman run --name ' + id + '-run -p ' + vmPort + ':8888 -dit ' + id, {
+                           cwd: dockerfilePath
+                         })
     } catch (err) {
         if(err) {
             console.log(err);
@@ -333,7 +357,7 @@ async function runVM(id, path) {
         }
     }
 
-    console.log('data = ', data);
+    console.log('data = ', data.stdout);
 
     vmStarted = true
 
@@ -341,14 +365,14 @@ async function runVM(id, path) {
 
     console.log("Starting VM -- finish")
 
-
     return ([vmStarted])
 }
 
 
 async function initGlobal(id, path, config) {
         // Do machine creation and preparing file in parallel
-        const [result1, result2] = await Promise.all([createMachine(id, path), prepareFile(id, path, config)]);
+        //const [result1, result2] = await Promise.all([createMachine(id, path), prepareFile(id, path, config)]);
+        const [result1, result2] = await Promise.all([createMachineNop(id, path), prepareFile(id, path, config)]);
 
         // Run machine (do it async)
         const result3 = runVM(id, path)
@@ -472,7 +496,8 @@ async function userProxy(ctx, next) {
         ctx.respond = false
         var reqid = ctx.path.split('/')
         var ip = idToip[reqid[2]]
-        var targetUrl = "http://"+ ip + ":8888"
+        var port = idToport[reqid[2]]
+        var targetUrl = "http://"+ ip + ":" + port
         console.log('Later: ' + targetUrl)
         
         // Forward body request
@@ -523,7 +548,8 @@ server.on('upgrade', (req, socket, head) => {
     if (req.url.indexOf('\/id\/') > -1) {
         var reqid = req.url.split('/')
         var ip = idToip[reqid[2]]
-        var targetUrl = "http://" + ip + ":8888"
+        var port = idToport[reqid[2]]
+        var targetUrl = "http://"+ ip + ":" + port
 
         console.log('req ws: ' + JSON.stringify(req.body))
 
