@@ -32,9 +32,11 @@ var store = {
         subprocCreateVM: -1,
         subprocPrepareFiles: -1,
         subprocLaunchVM: -1,
-        url1: "",
+	url0: "",      
+	url1: "",
         url2: "",
-        url3: ""
+        url3: "",
+	url4: ""
     },
     nextPhaseAction() {
         this.state.phase = this.state.phase + 1
@@ -73,6 +75,7 @@ var store = {
     },
     populateURLs() {
         var prefix = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
+	this.state.url0 = prefix + '/id/' + this.state.id + '/p/status';
         this.state.url1 = prefix + '/id/' + this.state.id + '/p/workspace/';
         this.state.url2 = prefix + '/id/' + this.state.id + '/p/terminal';
         this.state.url3 = prefix + '/id/' + this.state.id + '/p/logs';
@@ -203,9 +206,10 @@ var assSelect = new Vue({
             .then(value => {
                 // TODO: Stop all process (docker, etc.)
                 if (value == true) {
-                    store.resetPhaseAction();
                     store.resetIDAction();
+                    store.resetPhaseAction();
                     store.resetAddrAction();
+                    store.resetSubProc();
                     this.notValid = true;
                     this.visible = value;
                 }
@@ -214,6 +218,26 @@ var assSelect = new Vue({
                 // An error occurred
             })
             //this.visible = true
+        },
+        destroyProcess: function () {
+            // Destroy using ID
+            axios
+            .post(baseurl + "/destroyContainer", {config: this.curr.config})
+            .then(response => {
+                store.setIDAction(response.data.id)
+            })
+            .catch(error => {
+                console.log(error)
+                //TODO, proper error message
+            })
+            .finally(() => console.log("Finish Destroy"))
+
+            store.resetIDAction();
+            store.resetPhaseAction();
+            store.resetAddrAction();
+            store.resetSubProc();
+            this.notValid = true;
+            this.visible = value;
         },
         startConfig: function () {
             // TODO: Start all process (get ID, start docker, get IP, etc.)
@@ -242,13 +266,43 @@ var assSelect = new Vue({
 var runTime = new Vue({
     el: '#runtime',
     data: {
-        state: store.state
+        state: store.state,
+	status: "Initializing",
+	statusled: "led-blue"
     },
     methods: {
         refreshBelow: function(x) {
             //alert("refreshing:" + x);
             x.src = x.src;
         },
+        getStatus: function () {
+            // Only check when VM is active
+            if (this.state.subprocLaunchVM != 1) return;
+
+            // Get status
+            axios
+            .get(this.state.url0)
+            .then(response => {
+			if(response.data.name == "all") {
+				this.status = "Running";
+				this.statusled = "led-yellow"
+			 } else {
+				console.log(response.data)
+				// Show up report
+				this.state.url4 = prefix + '/id/' + this.state.id + '/p/reports';
+			}
+            })
+            .catch(error => {
+                console.log(error)
+            })
+            .finally(() => console.log("checkStatus Finish"))
+        },
+    },
+    mounted: function () {
+	this.getStatus();
+        setInterval(function () {
+            this.getStatus();
+        }.bind(this), 10000);
     }
 })
 
@@ -271,9 +325,9 @@ var loading = new Vue({
             })
             .then(response => {
                 // TODO: Update parent
-                this.state.subprocCreateVM = response.data.status[0]
-		        this.state.subprocPrepareFiles = response.data.status[1]
-		        this.state.subprocLaunchVM = response.data.status[2]
+                this.state.subprocCreateVM = response.data.status[0];
+                this.state.subprocPrepareFiles = response.data.status[1];
+                this.state.subprocLaunchVM = response.data.status[2];
                 if(this.state.subprocLaunchVM == 1) {
                     store.setAddrAction(response.data.ipAddr)
                     store.populateURLs()
@@ -288,6 +342,7 @@ var loading = new Vue({
         }
     },
     mounted: function () {
+	this.loadData();
         setInterval(function () {
             this.loadData();
         }.bind(this), 10000);
