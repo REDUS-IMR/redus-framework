@@ -289,6 +289,7 @@ var runTime = new Vue({
 			 } else {
 				console.log(response.data)
 				// Show up report
+				var prefix = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
 				this.state.url4 = prefix + '/id/' + this.state.id + '/p/reports';
 			}
             })
