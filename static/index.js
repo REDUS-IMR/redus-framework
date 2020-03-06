@@ -119,22 +119,15 @@ var assSelect = new Vue({
             "North Sea NOR IBTS Q3 DATRAS export"
         ],
         assessmentTitles: [
-            { text: '', id: '' },
             { text: 'North East Arctic Cod', id: 'neacod' },
-            { text: 'North East Arctic Haddock', id: 'neahad' },
+            { text: 'Norwegian Spring-Spawning Herring', id: 'nsher' },
         ],
-        initYear: [
-            { text: '' },
-        ],
-        emptyYear: [
-            { text: '' },
-        ],
+        initYear: [],
         neacodYear: [
-            { text: '' },
             { text: '2018' },
         ],
-        neahadYear: [
-            { text: '' },
+        nsherYear: [
+            { text: '2019' },
         ]
     },
     methods: {
@@ -158,15 +151,14 @@ var assSelect = new Vue({
                 return ""
         },
         changeAss: function (event) {
-            this.curr.ass = event.target.value
-            this.curr.year = ''
-            if (event.target.value == "neacod") {
-                this.initYear = this.neacodYear
-            } else if (event.target.value == "neahad") {
-                this.initYear = this.neahadYear
+            if (event.target.value != '') {
+                this.curr.ass = event.target.value
+                this.initYear = this[this.curr.ass + "Year"]
             } else {
-                this.initYear = this.emptyYear
+                this.initYear = []
             }
+            this.curr.year = ''
+            
             this.checkValid()
         },
         changeYear: function(event) {
@@ -174,10 +166,15 @@ var assSelect = new Vue({
             this.checkValid()
         },
         checkValid: function () {
-            if (this.curr.ass == 'neacod' && this.curr.year != '') {
-                this.notValid = false
-            } else {
+            if (this.curr.ass == '' || this.curr.year == '') {
                 this.notValid = true
+            } else {
+                var found = this[this.curr.ass + "Year"].findIndex(x => x.text === this.curr.year)
+                if(found >= 0) {
+                    this.notValid = false
+                } else {
+                    this.notValid = true
+                }
             }
         },
         startProcess: function () {
@@ -267,8 +264,9 @@ var runTime = new Vue({
     el: '#runtime',
     data: {
         state: store.state,
-	status: "Initializing",
-	statusled: "led-blue"
+	    status: "Initializing",
+        statusled: "led-blue",
+        notfinish: true
     },
     methods: {
         refreshBelow: function(x) {
@@ -290,7 +288,19 @@ var runTime = new Vue({
 				console.log(response.data)
 				// Show up report
 				var prefix = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
-				this.state.url4 = prefix + '/id/' + this.state.id + '/p/reports';
+                this.state.url4 = prefix + '/id/' + this.state.id + '/p/report';
+                
+                var redustot = response.data.redus.reduce(function(total, num){return total + num})
+                var assesstot = response.data.assessement.reduce(function(total, num){return total + num})
+
+                if(redustot + assesstot == 0) {
+                    this.status = "Successfully finished";
+                    this.statusled = "led-green";
+                    this.notfinish = false;
+                } else {
+                    this.status = "Finished with error!";
+				    this.statusled = "led-red";
+                }
 			}
             })
             .catch(error => {

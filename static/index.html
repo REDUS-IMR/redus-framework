@@ -36,11 +36,13 @@
 
                 <p>Assessment:
                     <select v-on:change="changeAss($event)" class="form-control" name="assessmentTitle">
+                        <option selected disabled>Choose assessment</option>
                         <option v-for="aE in assessmentTitles" v-bind:value="aE.id">{{aE.text}}</option>
                     </select>
                 </p>
                 <p>Year:
                     <select v-on:change="changeYear($event)" class="form-control" name="assessmentYear">
+                        <option :selected="curr.year === ''" disabled>Choose year</option>
                         <option v-for="yr in initYear" v-bind:value="yr.text">{{yr.text}}</option>
                     </select>
                 </p>
@@ -156,8 +158,7 @@
                     <b-embed id="iLTab" type="iframe" v-bind:src="state.url3"></b-embed>
                 </b-tab>
 		<b-tab title="Reports" :disabled="state.subprocLaunchVM !== 1">
-                    <div>Results for the current run. Only available when the run is finished.</i>
-                    </div>    
+                    <div v-show="notfinish">Results for the current run. Only available after the current run has finished.</div>    
                     <b-embed id="iLTab" type="iframe" v-bind:src="state.url4">Not available yet!</b-embed>
                 </b-tab>
             </b-tabs>
