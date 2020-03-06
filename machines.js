@@ -51,6 +51,7 @@ var Docker = dockerCLI.Docker;
 const fs = require('fs');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const portfinder = require('portfinder');
 
 var machinepool = require("./data.js")
 
@@ -60,12 +61,21 @@ async function createMachineNop(id, path) {
 
     console.log("Creating machine -- Start")
 
-    // Define port
-    var vmPort = machinepool.getnewport()
-    machinepool.setipport(id, "127.0.0.1",  vmPort)
+    // Define port (use portfinder)
+    var abc =  portfinder.getPortPromise()
+    .then((port) => {
+        vmIdx = machinepool.setipport(id, "127.0.0.1",  port);
+        vmPort = port;
+        fs.writeFileSync(path + "/" + "prepareVM.status", "1");
+        fs.writeFileSync(path + "/" + "VM.IP", "127.0.0.1");    
+    })
+    .catch((err) => {
+        console.log(err);
+    });
+    
+    await abc;
 
-    fs.writeFileSync(path + "/" + "prepareVM.status", "1");
-    fs.writeFileSync(path + "/" + "VM.IP", "127.0.0.1");
+    console.log("Got port " + vmPort + " for id " + vmIdx);
 
     console.log("Creating machine -- Finish")
     return(["127.0.0.1"])

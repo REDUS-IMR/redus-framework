@@ -23,28 +23,23 @@
 function f() {
     var idToip = []
     var idToport = []
-    var startport = 8000
     var idinc = 0
 
     var Obj = new Object()
 
     function setipport(id, ip, port) {
-	idToip[id] = ip
-   	idToport[id] = port
+	    idToip[id] = ip
+        idToport[id] = port
+        return idinc++
     }
 
     function getipport(id) {
 	return [idToip[id], idToport[id]]
     }
 
-    function getnewport() {
-        return startport + (idinc++);
-    }
-
     Obj.setipport = setipport
     Obj.getipport = getipport
-    Obj.getnewport = getnewport
-
+    
     return Obj
 }
 
