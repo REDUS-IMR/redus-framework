@@ -130,7 +130,8 @@ async function prepareFile(id, path, params) {
 
         sEntries.forEach(function(element){
             console.log(element);
-            if(element.process!='asis' && element.process!="manual") {
+            if(element.process!='asis') {
+                var srcdata = ''
 
                 iter++
                 fl = element.fleetName.split(" ")
@@ -156,9 +157,17 @@ async function prepareFile(id, path, params) {
                     buildConf = "redus/" + fleet + ".xml"
 
                     element.remoteSource = ''
+                }else if(element.process == 'manual') {
+                    sourceAge = true
+                    sourceYear = true
+                    buildConf = ''
+                    srcdata = element.data
                 }
+
                 prefix = 'survey.update.'
                 txtTemplate.default[prefix + iter + '.mode'] = element.process
+                txtTemplate.default[prefix + iter + '.data'] = srcdata
+                txtTemplate.default[prefix + iter + '.data_var'] = srcdata
                 txtTemplate.default[prefix + iter + '.surveyBuildConf'] = buildConf
                 txtTemplate.default[prefix + iter + '.header'] = fleet
                 txtTemplate.default[prefix + iter + '.stssource'] = element.remoteSource
