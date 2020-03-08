@@ -183,7 +183,7 @@ var assSelect = new Vue({
 
             // Get an ID from server
             axios
-            .post(baseurl + "/createNew", {config: this.curr.config})
+            .post(baseurl + "/createNew", {selection: {"name": this.curr.ass, "year": this.curr.year}, config: this.curr.config})
             .then(response => {
                 store.setIDAction(response.data.id)
             })
@@ -199,7 +199,7 @@ var assSelect = new Vue({
             store.nextPhaseAction();
         },
         changeProcess: function () {
-            this.$bvModal.msgBoxConfirm('Are you sure you want to change? The current running process will be stopped and all data will be destroyed.')
+            this.$bvModal.msgBoxConfirm('Are you sure you want to change process?')
             .then(value => {
                 // TODO: Stop all process (docker, etc.)
                 if (value == true) {
@@ -214,27 +214,35 @@ var assSelect = new Vue({
             .catch(err => {
                 // An error occurred
             })
-            //this.visible = true
         },
         destroyProcess: function () {
             // Destroy using ID
-            axios
-            .post(baseurl + "/destroyContainer", {config: this.curr.config})
-            .then(response => {
-                store.setIDAction(response.data.id)
-            })
-            .catch(error => {
-                console.log(error)
-                //TODO, proper error message
-            })
-            .finally(() => console.log("Finish Destroy"))
+            this.$bvModal.msgBoxConfirm('Are you sure you want to destroy? The current running process will be stopped and all data will be destroyed.')
+            .then(value => {
+                // TODO: Stop all process (docker, etc.)
+                if (value == true) {
+                    axios
+                    .post(baseurl + "/destroyID", {id: store.state.id})
+                    .then(response => {
+                        console.log(response.data)
+                    })
+                    .catch(error => {
+                        console.log(error)
+                        //TODO, proper error message
+                    })
+                    .finally(() => console.log("Finish Destroy"))
 
-            store.resetIDAction();
-            store.resetPhaseAction();
-            store.resetAddrAction();
-            store.resetSubProc();
-            this.notValid = true;
-            this.visible = value;
+                    store.resetIDAction();
+                    store.resetPhaseAction();
+                    store.resetAddrAction();
+                    store.resetSubProc();
+                    this.notValid = true;
+                    this.visible = value;
+                }
+            })
+            .catch(err => {
+                // An error occurred
+            })
         },
         startConfig: function () {
             // TODO: Start all process (get ID, start docker, get IP, etc.)

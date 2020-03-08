@@ -61,7 +61,10 @@
                                             <b-tab title="Assessment" active>
                                                 <b-card-text>Configuration of the assessment model</b-card-text>
                                                 <div v-if="configAvailable">
+                                                    
                                                     <p>Current model: <pre>{{curr.config.assessment.model}}</pre></p>
+                                                    <p>Change to: <pre>{{curr.config.assessment.model}}</pre></p>
+
                                                     <p><i class="fas fa-info-circle"></i> The above are following TAF convention, which is a github repository definition.
                                                         Changing assessment model is not implemented yet, pending a universal data exchange format for assessment models.</p>
                                                 </div>
@@ -135,6 +138,7 @@
 						<div v-bind:class="statusled"></div>
 			</div>
             </div>
+            <hr/>
             <b-tabs content-class="mt-3">
                 <b-tab title="File Manager" :disabled="state.subprocLaunchVM !== 1" active>
                     <div>File manager for the current run. If the panel below is not responsive, 
