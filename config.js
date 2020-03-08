@@ -20,6 +20,7 @@
 
 module.exports = {
 	serverPort : 3000,
-	serverIp : 'localhost'
+    serverIp : 'localhost',
+    userportstart: 10000
 }
 

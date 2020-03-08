@@ -101,7 +101,13 @@ server.on('upgrade', (req, socket, head) => {
         console.log('req ws: ' + JSON.stringify(req.body))
 
         console.log('Dest ws: ' + targetUrl)
-        proxy.ws(req, socket, head, { target: targetUrl })
+        proxy.ws(req, socket, head, { target: targetUrl }, function(e){
+            if(e){
+                console.error(e.message);
+                console.log(req.headers.host,'-->',targetUrl);
+                console.log('-----');
+              }
+        });
     }
 })
 

@@ -24,7 +24,6 @@ var machinepool = require("./data.js")
 
 // Proxy init
 const proxy = httpProxy.createProxyServer({
-    changeOrigin: true,
     ws: true
 })
 
@@ -35,6 +34,8 @@ proxy.on('error', function (err, req, res) {
         });
 
     res.end('Something went wrong. And we are reporting a custom error message.');
+    console.log(req)
+    console.log(err)
 });
 
 // For properly forwarding POST request

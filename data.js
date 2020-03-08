@@ -17,6 +17,7 @@
     along with REDUS Framework.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+const globalConfig = require("./config.js")
 
 
 // Global variable for id to IP mapping
@@ -27,17 +28,37 @@ function f() {
 
     var Obj = new Object()
 
-    function setipport(id, ip, port) {
-	    idToip[id] = ip
+    function newmachinedatarootless(id, ip) {
+
+        idinc++
+
+        var port =  globalConfig.userportstart + idinc
+
+        idToip[id] = ip
         idToport[id] = port
-        return idinc++
+
+        return [idinc, port]
     }
+
+    function newmachinedatarootfull(id, ip, port) {
+
+        idinc++
+
+        idToip[id] = ip
+        idToport[id] = port
+
+        return idinc
+    }
+
+    
 
     function getipport(id) {
 	return [idToip[id], idToport[id]]
     }
 
-    Obj.setipport = setipport
+    Obj.newmachinedatarootless = newmachinedatarootless
+    Obj.newmachinedatarootfull = newmachinedatarootfull
+
     Obj.getipport = getipport
     
     return Obj
