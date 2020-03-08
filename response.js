@@ -25,6 +25,11 @@ const send = require('koa-send')
 // User modules
 const initGlobal = require("./prepfile.js")
 
+// JSON escape
+function jsonEscape(str)  {
+    return str.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "    ");
+}
+
 // response
 async function respond(ctx, next) {
 
@@ -45,8 +50,13 @@ async function respond(ctx, next) {
         return;
     }
 
-    if ('/v1/getAssFiles' == ctx.url) {
-        await send(ctx, "extra/neacod-2018.tgz")
+    if (ctx.url.startsWith('/v1/getAssFiles')) {
+        let assID = ctx.request.query.name
+        let yrID = parseInt(ctx.request.query.year)
+
+        console.log("extra/" + assID + "-" + yrID + ".tgz")
+
+        await send(ctx, "extra/" + assID + "-" + yrID + ".tgz")
         return;
     }
 
@@ -84,7 +94,7 @@ async function respond(ctx, next) {
     // Make new docker node
     if ('/v1/createNew' == ctx.url) {
         // Process config!
-        const reqconfig = body.config
+        const reqconfig = {"selection":body.selection, "config": body.config}
 
         // Getting ID
         const uuidv4 = require('uuid/v4');

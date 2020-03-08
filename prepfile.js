@@ -37,15 +37,20 @@ async function initGlobal(id, path, config) {
 
 // PrepareFile function
 
-async function prepareFile(id, path, config) {
+async function prepareFile(id, path, params) {
     const http = require('http');
     const targz = require('targz');
 
+    var config = params.config
+    var selection = params.selection
     
     // Stats
     let filePrepared = false
 
     console.log("Preparing file -- Start")
+    // Configuration
+    console.log(selection)
+
 
     // Redus pipeline
     const remote = 'https://github.com/REDUS-IMR/docker-redus-pipeline.git';
@@ -60,7 +65,7 @@ async function prepareFile(id, path, config) {
     }
 
     // Assessment file
-    const src = 'http://' + globalConfig.serverIp + ':' + globalConfig.serverPort + '/v1/getAssFiles';
+    const src = 'http://' + globalConfig.serverIp + ':' + globalConfig.serverPort + '/v1/getAssFiles?name=' + selection.name + "&year=" + selection.year;
     const dst = path + "/src.tgz";
 
     // TODO: Better downloader and extractor
@@ -78,8 +83,6 @@ async function prepareFile(id, path, config) {
           if (cb) cb(err.message);
         });
       });
-
-
 
     // Download file
     let result = await download(src, dst);
@@ -104,10 +107,11 @@ async function prepareFile(id, path, config) {
     fs.writeFileSync(path + "/docker-redus-pipeline/projects/id.conf", id);
 
 
-    // Configuration
-    console.log(config)
 
     if(config != null) {
+            // Configuration
+        console.log(config)
+
         // Prepare conf directory 
         // TODO: use conf
         confPath = path + "/docker-redus-pipeline/projects/neacod-2018/redus"

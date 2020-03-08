@@ -53,12 +53,6 @@ async function logger(ctx, next) {
         console.log('%s %s - %s', ctx.method, ctx.url, ms);
     }
 }
-
-// JSON escape
-function jsonEscape(str)  {
-    return str.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "    ");
-}
-
 // Start koa server here
 const app = module.exports = new Koa();
 
