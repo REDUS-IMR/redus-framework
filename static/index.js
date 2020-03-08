@@ -87,6 +87,7 @@ var store = {
 
 }
 
+
 // Assessment selection
 var assSelect = new Vue({
     el: '#ass-select',
@@ -129,6 +130,25 @@ var assSelect = new Vue({
         nsherYear: [
             { text: '2019' },
         ]
+    },
+    mounted: function () {
+        this.$nextTick(function () {
+            var queryString = window.location.search;
+            var urlParams = new URLSearchParams(queryString);
+
+            var runid = urlParams.get('runid')
+
+            if(runid != null && runid != ""){
+                // TODO check valid user and runid first
+                // TODO populate survey and year string
+                store.startLoading()
+                store.setIDAction(runid)
+                // Hide the selector
+                this.visible = false
+                // Get to the next phase of the app
+                store.nextPhaseAction();
+            }
+        })
     },
     methods: {
         surveyProcessChange: function(event) {
@@ -275,6 +295,11 @@ var runTime = new Vue({
 	    status: "Initializing",
         statusled: "led-blue",
         notfinish: true
+    },
+    computed: {
+         directLink: function () {
+            return window.location.origin + "/?runid=" + this.state.id
+         }
     },
     methods: {
         refreshBelow: function(x) {
