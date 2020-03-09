@@ -24,6 +24,7 @@ const send = require('koa-send')
 
 // User modules
 const initGlobal = require("./prepfile.js")
+const machines = require("./machines.js")
 
 // JSON escape
 function jsonEscape(str)  {
@@ -90,8 +91,7 @@ async function respond(ctx, next) {
         return;
     }
 
-    let env
-    // Make new docker node
+    // Make new container
     if ('/v1/createNew' == ctx.url) {
         // Process config!
         const reqconfig = {"selection":body.selection, "config": body.config}
@@ -112,6 +112,20 @@ async function respond(ctx, next) {
         ctx.body = { id: newid };
         return;
     }
+
+    // Delete container
+    if ('/v1/destroyCurrent' == ctx.url) {
+
+        // Getting ID
+        let path = os.tmpdir() + "/" + body.id;
+
+        // Go INIT!
+        let ret = await machines.destroyMachineNop(body.id, path)
+
+        ctx.body = { status: ret };
+        return;
+    }
+
 
     if (ctx.path === '/') {
         await send(ctx, "static/index.html")

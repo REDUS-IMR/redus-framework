@@ -242,7 +242,7 @@ var assSelect = new Vue({
                 // TODO: Stop all process (docker, etc.)
                 if (value == true) {
                     axios
-                    .post(baseurl + "/destroyID", {id: store.state.id})
+                    .post(baseurl + "/destroyCurrent", {id: store.state.id})
                     .then(response => {
                         console.log(response.data)
                     })
@@ -304,7 +304,7 @@ var runTime = new Vue({
     methods: {
         refreshBelow: function(x) {
             //alert("refreshing:" + x);
-            x.src = x.src;
+            x.src += '';
         },
         getStatus: function () {
             // Only check when VM is active
@@ -343,10 +343,9 @@ var runTime = new Vue({
         },
     },
     mounted: function () {
-	this.getStatus();
         setInterval(function () {
             this.getStatus();
-        }.bind(this), 10000);
+        }.bind(this), 5000);
     }
 })
 
@@ -386,10 +385,9 @@ var loading = new Vue({
         }
     },
     mounted: function () {
-	this.loadData();
         setInterval(function () {
             this.loadData();
-        }.bind(this), 10000);
+        }.bind(this), 5000);
     }
 })
 

@@ -54,6 +54,27 @@ const exec = util.promisify(require('child_process').exec);
 
 var machinepool = require("./data.js")
 
+// Destroy machine for podman
+async function destroyMachineNop(id, path) {
+
+    console.log("Destroy machine -- Start")
+
+    // Destroy and delete tmp files
+    try {
+         data = await exec('podman kill ' + id + '-run && podman rm ' + id + '-run && podman image rm ' + id)
+         fs.rmdir(path, { recursive: true });
+    } catch (err) {
+        if(err) {
+            console.log(err);
+            
+            return 1
+        }
+    }
+
+    console.log("Destroy machine -- Finish")
+    return 0
+}
+
 
 // Create machine for Podman
 async function createMachineNop(id, path) {
@@ -194,6 +215,7 @@ async function runVM(id, path) {
 module.exports = {
     runVM: runVM,
     createMachine: createMachine,
-    createMachineNop: createMachineNop
+    createMachineNop: createMachineNop,
+    destroyMachineNop: destroyMachineNop
 }
 

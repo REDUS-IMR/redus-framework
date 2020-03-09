@@ -103,6 +103,8 @@
                                                                 <span v-if="s.process=='manual'">
                                                                     <span><i class="fas fa-info-circle"></i> Please input data for the current fleet in the textbox below</span>
                                                                     <b-form-textarea v-model="s.data" rows="20"></b-form-textarea>
+                                                                    <span>Variance (for XSAM):</span>
+                                                                    <b-form-textarea v-model="s.data_var" rows="20"></b-form-textarea>
                                                                 </span>
                                                             </b-card>
                                                             </p>
