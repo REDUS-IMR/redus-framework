@@ -114,7 +114,7 @@ async function prepareFile(id, path, params) {
 
         // Prepare conf directory 
         // TODO: use conf
-        confPath = path + "/docker-redus-pipeline/projects/neacod-2018/redus"
+        confPath = path + "/docker-redus-pipeline/projects/" + selection.name + "-" + selection.year + "/redus"
 
         // Read template
         confTemplate = fs.readFileSync("extra/redus.yaml", "utf8")
@@ -153,21 +153,26 @@ async function prepareFile(id, path, params) {
                     // Write config
                     fs.writeFileSync(confPath + "/" + fleet + ".xml" , element.buildParameters.trim())
 
+                    // Get source
+                    var parseString = require('xml2js').parseString;
+                    parseString(element.buildParameters, function (err, result) {
+                        element.remoteSource = result.redus_master.parameters[0].configuration[0].stsName[0]
+                    });
+
                     // Write config
                     buildConf = "redus/" + fleet + ".xml"
-
-                    element.remoteSource = ''
                 }else if(element.process == 'manual') {
                     sourceAge = true
                     sourceYear = true
                     buildConf = ''
                     srcdata = element.data
+                    srcdatavar = element.data_var
                 }
 
                 prefix = 'survey.update.'
                 txtTemplate.default[prefix + iter + '.mode'] = element.process
                 txtTemplate.default[prefix + iter + '.data'] = srcdata
-                txtTemplate.default[prefix + iter + '.data_var'] = srcdata
+                txtTemplate.default[prefix + iter + '.data_var'] = srcdatavar
                 txtTemplate.default[prefix + iter + '.surveyBuildConf'] = buildConf
                 txtTemplate.default[prefix + iter + '.header'] = fleet
                 txtTemplate.default[prefix + iter + '.stssource'] = element.remoteSource
