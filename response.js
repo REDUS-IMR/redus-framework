@@ -31,6 +31,22 @@ function jsonEscape(str)  {
     return str.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "    ");
 }
 
+// Sanitize UUID
+function validUUID(x) {
+    if(x.match('[0-9a-fA-F]{8}.[0-9a-fA-F]{4}.[0-9a-fA-F]{4}.[0-9a-fA-F]{4}.[0-9a-fA-F]{12}') == x)
+    	return true
+    else
+    	return false
+}
+
+// Sanitize alphanumeric
+function validAlphaNum(x) {
+    if(x.match('[0-9a-zA-Z]+') == x)
+    	return true
+    else
+    	return false
+}
+
 // response
 async function respond(ctx, next) {
 
@@ -43,9 +59,13 @@ async function respond(ctx, next) {
         // Get all posted variable
         let assID = body.assID
         let yrID = body.assYR
-        //TODO: Get conf on the fly:
 
-        let rawdata = fs.readFileSync('extra/'+assID+'-'+yrID+'.json', 'utf8');
+	if(!(validAlphaNum(assID) && validAlphaNum(yrID))) {
+		console.log("getConfig: Found invalid request data")
+		return
+	}
+
+        let rawdata = fs.readFileSync('extra/' + assID + '-' + yrID + '.json', 'utf8');
         let config = JSON.parse(jsonEscape(rawdata));
         ctx.body = config
         return;
@@ -53,7 +73,12 @@ async function respond(ctx, next) {
 
     if (ctx.url.startsWith('/v1/getAssFiles')) {
         let assID = ctx.request.query.name
-        let yrID = parseInt(ctx.request.query.year)
+        let yrID = ctx.request.query.year
+
+	if(!(validAlphaNum(assID) && validAlphaNum(yrID))) {
+		console.log("getAssFiles: Found invalid request data")
+		return
+	}
 
         console.log("extra/" + assID + "-" + yrID + ".tgz")
 
@@ -66,27 +91,32 @@ async function respond(ctx, next) {
         let status = [-1, -1, -1];
         let ipAddr = null
 
-        if(newid != "") {
-            console.log("ID request: " + newid)
+	ctx.body = { status: status, ipAddr: ipAddr}
 
-            let path = os.tmpdir() + "/" + newid + "/" + "prepareVM.status";
-            if(fs.existsSync(path))
-                status[0] = parseInt(fs.readFileSync(path, "utf8"))
+	if(!validUUID(newid)) {
+		console.log("checkInit: Found invalid request data")
+		return
+	}
 
-            path = os.tmpdir() + "/" + newid + "/" + "prepareFile.status";
-            if(fs.existsSync(path))
-                status[1] = parseInt(fs.readFileSync(path, "utf8"))
+	console.log("ID request: " + newid)
 
-            path = os.tmpdir() + "/" + newid + "/" + "startVM.status";
-            if(fs.existsSync(path))
-                status[2] = parseInt(fs.readFileSync(path, "utf8"))
+	let path = os.tmpdir() + "/" + newid + "/" + "prepareVM.status";
+	if(fs.existsSync(path))
+	status[0] = parseInt(fs.readFileSync(path, "utf8"))
 
-            path = os.tmpdir() + "/" + newid + "/" + "VM.IP";
-            if(fs.existsSync(path))
-                ipAddr = fs.readFileSync(path, "utf8")
-        }
+	path = os.tmpdir() + "/" + newid + "/" + "prepareFile.status";
+	if(fs.existsSync(path))
+	status[1] = parseInt(fs.readFileSync(path, "utf8"))
 
-        ctx.body = { status: status, ipAddr: ipAddr}
+	path = os.tmpdir() + "/" + newid + "/" + "startVM.status";
+	if(fs.existsSync(path))
+	status[2] = parseInt(fs.readFileSync(path, "utf8"))
+
+	path = os.tmpdir() + "/" + newid + "/" + "VM.IP";
+	if(fs.existsSync(path))
+	ipAddr = fs.readFileSync(path, "utf8")
+
+	ctx.body = { status: status, ipAddr: ipAddr}
 
         return;
     }
@@ -115,6 +145,11 @@ async function respond(ctx, next) {
 
     // Delete container
     if ('/v1/destroyCurrent' == ctx.url) {
+
+	if(!validUUID(body.id)) {
+		console.log("destroyCurrent: Found invalid request data")
+		return
+	}
 
         // Getting ID
         let path = os.tmpdir() + "/" + body.id;

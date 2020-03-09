@@ -57,16 +57,16 @@ var machinepool = require("./data.js")
 // Destroy machine for podman
 async function destroyMachineNop(id, path) {
 
-    console.log("Destroy machine -- Start")
+    console.log("Destroy machine -- Start:" + id, ", path:" + path)
 
     // Destroy and delete tmp files
     try {
-         data = await exec('podman kill ' + id + '-run && podman rm ' + id + '-run && podman image rm ' + id)
-         fs.rmdir(path, { recursive: true });
+         data = await exec('podman container rm -f ' + id + '-run')
+         data = exec('podman image rm ' + id)
+	 fs.rmdirSync(path, { recursive: true });
     } catch (err) {
         if(err) {
             console.log(err);
-            
             return 1
         }
     }

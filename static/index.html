@@ -63,10 +63,13 @@
                                                 <div v-if="configAvailable">
                                                     
                                                     <p>Current model: <pre>{{curr.config.assessment.model}}</pre></p>
-                                                    <p>Change to: <pre>{{curr.config.assessment.model}}</pre></p>
+                                                    <p>Change to: <select v-model="curr.config.assessment.process" class="form-control">
+                                                                        <option v-for="sp in availableModel" v-bind:value="sp.value">{{sp.text}}</option>
+                                                                  </select>
+                                                    </p>
 
                                                     <p><i class="fas fa-info-circle"></i> The above are following TAF convention, which is a github repository definition.
-                                                        Changing assessment model is not implemented yet, pending a universal data exchange format for assessment models.</p>
+                                                        Changing assessment model fucntion is still very rudimentary!</p>
                                                 </div>
                                             </b-tab>
                                             <b-tab title="Input data">

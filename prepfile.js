@@ -132,6 +132,7 @@ async function prepareFile(id, path, params) {
             console.log(element);
             if(element.process!='asis') {
                 var srcdata = ''
+		var srcdatavar = ''
 
                 iter++
                 fl = element.fleetName.split(" ")
@@ -184,11 +185,10 @@ async function prepareFile(id, path, params) {
                 if (!fs.existsSync(confPath)){
                     fs.mkdirSync(confPath);
                 }
-
-                fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
-            
             }
         });
+
+	fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
         console.log(txtTemplate)
     }
 

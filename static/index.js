@@ -80,6 +80,12 @@ var store = {
         this.state.url2 = prefix + '/id/' + this.state.id + '/p/terminal';
         this.state.url3 = prefix + '/id/' + this.state.id + '/p/logs';
     },
+    resetURLs() {
+        this.state.url0 = '';
+        this.state.url1 = '';
+        this.state.url2 = '';
+        this.state.url3 = '';
+    },
     resetAddrAction() {
         if (this.debug) console.log('Resetting address')
         this.state.remoteAddr = ""
@@ -97,13 +103,22 @@ var assSelect = new Vue({
         curr: [],
         notValid: true,
         reRenderEntries: 0,
+	availableCatchProcess: [
+            { text: 'As Is', value: 'asis' },
+            { text: 'Input manual values', value: 'manual' },
+        ],
         availableSurveyProcess: [
             { text: 'As Is', value: 'asis' },
             { text: '(Official) Pre-computed values', value: 'remote' },
             { text: 'Re-process using StoX', value: 'build' },
             { text: 'Input manual values', value: 'manual' },
         ],
-	    stsList:[
+	availableModel: [
+            { text: 'As Is', value: 'asis' },
+            { text: 'Latest SAM', value: 'sam' },
+            { text: 'Latest XSAM', value: 'xsam' },
+        ],
+	stsList:[
             "Barents Sea Beaked redfish and Sebastes sp in Subareas I and II bottom trawl index in winter",
             "Barents Sea Blue whiting bottom trawl index in winter",
             "Barents Sea Golden redfish in Subareas I and II bottom trawl index in winter",
@@ -116,12 +131,11 @@ var assSelect = new Vue({
             "Norwegian Sea NOR Norwegian spring-spawning herring acoustic abundance index in Feb-Mar",
             "Varanger Stad Northeast Arctic saithe acoustic index in autumn",
             "Barents Sea Northeast Arctic cod acoustic index in winter",
-            "Barents Sea Northeast Arctic haddock acoustic index in winter",
-            "North Sea NOR IBTS Q3 DATRAS export"
+            "Barents Sea Northeast Arctic haddock acoustic index in winter"
         ],
         assessmentTitles: [
             { text: 'North East Arctic Cod', id: 'neacod' },
-            { text: 'Norwegian Spring-Spawning Herring', id: 'nsher' },
+            { text: 'Norwegian Sea Herring', id: 'nsher' },
         ],
         initYear: [],
         neacodYear: [
@@ -198,7 +212,7 @@ var assSelect = new Vue({
             }
         },
         startProcess: function () {
-            // TODO: Start all process (get ID, start docker, get IP, etc.)
+
             store.startLoading()
 
             // Get an ID from server
@@ -209,7 +223,6 @@ var assSelect = new Vue({
             })
             .catch(error => {
                 console.log(error)
-                //TODO, proper error message
             })
             .finally(() => console.log("Finish"))
 
@@ -227,12 +240,13 @@ var assSelect = new Vue({
                     store.resetPhaseAction();
                     store.resetAddrAction();
                     store.resetSubProc();
+                    store.resetURLs(); 
                     this.notValid = true;
                     this.visible = value;
                 }
             })
             .catch(err => {
-                // An error occurred
+                console.log(error)
             })
         },
         destroyProcess: function () {
@@ -241,27 +255,27 @@ var assSelect = new Vue({
             .then(value => {
                 // TODO: Stop all process (docker, etc.)
                 if (value == true) {
+                    let current = store.state.id
+ 		    store.resetIDAction();
+                    store.resetPhaseAction();
+                    store.resetAddrAction();
+                    store.resetSubProc();
+                    store.resetURLs();
+                    this.notValid = true;
+                    this.visible = value;
                     axios
-                    .post(baseurl + "/destroyCurrent", {id: store.state.id})
+                    .post(baseurl + "/destroyCurrent", {id: current})
                     .then(response => {
                         console.log(response.data)
                     })
                     .catch(error => {
                         console.log(error)
-                        //TODO, proper error message
                     })
                     .finally(() => console.log("Finish Destroy"))
-
-                    store.resetIDAction();
-                    store.resetPhaseAction();
-                    store.resetAddrAction();
-                    store.resetSubProc();
-                    this.notValid = true;
-                    this.visible = value;
                 }
             })
             .catch(err => {
-                // An error occurred
+                console.log(error)
             })
         },
         startConfig: function () {
@@ -280,7 +294,6 @@ var assSelect = new Vue({
             })
             .catch(error => {
                 console.log(error)
-                //TODO, proper error message
             })
             .finally(() => console.log("Opening config panel..."))
         },
