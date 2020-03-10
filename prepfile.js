@@ -192,7 +192,8 @@ async function prepareFile(id, path, params) {
         if(aConf.process != 'asis') {
             // UPDATE BIBTEX
             let bibfile = path + "/docker-redus-pipeline/projects/" + selection.name + "-" + selection.year + "/bootstrap/SOFTWARE.bib"
-            let data = fs.readFileSync(bibfile, 'utf8') 
+            if( fs.existsSync(bibfile) ) {
+	    let data = fs.readFileSync(bibfile, 'utf8') 
 
             console.log(data);
 
@@ -204,6 +205,7 @@ async function prepareFile(id, path, params) {
             fs.writeFileSync(bibfile + ".new", result, 'utf8')
 
             fs.copyFileSync(bibfile + ".new", bibfile)
+	}
         }
 
 	    fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
