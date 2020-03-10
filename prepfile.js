@@ -106,10 +106,8 @@ async function prepareFile(id, path, params) {
     // Put UUID in id.conf (for proxy purposes later)
     fs.writeFileSync(path + "/docker-redus-pipeline/projects/id.conf", id);
 
-
-
     if(config != null) {
-            // Configuration
+        // Configuration
         console.log(config)
 
         // Prepare conf directory 
@@ -132,7 +130,7 @@ async function prepareFile(id, path, params) {
             console.log(element);
             if(element.process!='asis') {
                 var srcdata = ''
-		var srcdatavar = ''
+		        var srcdatavar = ''
 
                 iter++
                 fl = element.fleetName.split(" ")
@@ -146,10 +144,6 @@ async function prepareFile(id, path, params) {
                     sourceYear = false
                     // Process xml here
                     console.log(element.buildParameters)
-
-                    if (!fs.existsSync(confPath)){
-                        fs.mkdirSync(confPath);
-                    }
 
                     // Write config
                     fs.writeFileSync(confPath + "/" + fleet + ".xml" , element.buildParameters.trim())
@@ -180,15 +174,39 @@ async function prepareFile(id, path, params) {
                 txtTemplate.default[prefix + iter + '.stsdate'] = ''
                 txtTemplate.default[prefix + iter + '.useSourceAge'] = sourceAge
                 txtTemplate.default[prefix + iter + '.useSourceYear'] = sourceYear
-
-                // Write conf
-                if (!fs.existsSync(confPath)){
-                    fs.mkdirSync(confPath);
-                }
             }
         });
 
-	fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
+        if (!fs.existsSync(confPath)){
+            fs.mkdirSync(confPath);
+        }
+
+        // Get assessment config
+        const aConf = config.assessment
+        if(aConf.process == 'sam') {
+            fs.writeFileSync(confPath + "/use.SAM" ,"")
+        } else if(aConf.process == 'xsam') {
+            fs.writeFileSync(confPath + "/use.XSAM" ,"")
+        }
+
+        if(aConf.process != 'asis') {
+            // UPDATE BIBTEX
+            let bibfile = path + "/docker-redus-pipeline/projects/" + selection.name + "-" + selection.year + "/bootstrap/SOFTWARE.bib"
+            let data = fs.readFileSync(bibfile, 'utf8') 
+
+            console.log(data);
+
+            let re = new RegExp(aConf.model);
+            let result = data.replace(re, 'fishfollower/SAM/stockassessment@master');
+
+            console.log(result);
+        
+            fs.writeFileSync(bibfile + ".new", result, 'utf8')
+
+            fs.copyFileSync(bibfile + ".new", bibfile)
+        }
+
+	    fs.writeFileSync(confPath + "/redus.yaml" , YAML.stringify(txtTemplate))
         console.log(txtTemplate)
     }
 
