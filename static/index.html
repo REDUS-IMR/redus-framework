@@ -150,26 +150,27 @@
                 <b-tab title="File Manager" :disabled="state.subprocLaunchVM !== 1" active>
                     <div>File manager for the current run. If the panel below is not responsive, 
                         try to refresh by it pressing this button 
-                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iFmTab)"></i>
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iFmTab, 1)"></i>
                     </div>
                     <b-embed id="iFmTab" type="iframe" v-bind:src="state.url1"></b-embed>
                 </b-tab>
                 <b-tab title="Console" :disabled="state.subprocLaunchVM !== 1">
                     <div>Console for the current run. If the panel below is not responsive, 
                             try to refresh it by pressing this button 
-                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iCTab)"></i>
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iCTab, 2)"></i>
                     </div>
                     <b-embed id="iCTab" type="iframe" v-bind:src="state.url2"></b-embed>
                 </b-tab>
                 <b-tab title="Logs" :disabled="state.subprocLaunchVM !== 1">
                     <div>Streaming logs for the current run. If the panel below is not responsive, 
                             try to refresh it by pressing this button 
-                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iLTab)"></i>
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iLTab, 3)"></i>
                     </div>    
                     <b-embed id="iLTab" type="iframe" v-bind:src="state.url3"></b-embed>
                 </b-tab>
-		<b-tab title="Reports" :disabled="state.subprocLaunchVM !== 1">
-                    <div v-show="notfinish">Results for the current run. Only available after the current run has finished.</div>    
+		            <b-tab title="Reports" :disabled="state.subprocLaunchVM !== 1">
+                    <div v-if="notfinish">Results for the current run. Only available after the current run has finished.</div>
+                    <div v-else>Run is finished. Download the artifacts by clicking this button: <b-button variant="success" size="sm" v-bind:href="state.url5" target="_blank">Download artifacts</b-button></div>
                     <b-embed id="iLTab" type="iframe" v-bind:src="state.url4">Not available yet!</b-embed>
                 </b-tab>
             </b-tabs>

@@ -32,11 +32,12 @@ var store = {
         subprocCreateVM: -1,
         subprocPrepareFiles: -1,
         subprocLaunchVM: -1,
-	url0: "",      
-	url1: "",
+        url0: "",      
+        url1: "",
         url2: "",
         url3: "",
-	url4: ""
+        url4: "",
+        url5: ""
     },
     nextPhaseAction() {
         this.state.phase = this.state.phase + 1
@@ -75,7 +76,7 @@ var store = {
     },
     populateURLs() {
         var prefix = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
-	this.state.url0 = prefix + '/id/' + this.state.id + '/p/status';
+	    this.state.url0 = prefix + '/id/' + this.state.id + '/p/status';
         this.state.url1 = prefix + '/id/' + this.state.id + '/p/workspace/';
         this.state.url2 = prefix + '/id/' + this.state.id + '/p/terminal';
         this.state.url3 = prefix + '/id/' + this.state.id + '/p/logs';
@@ -315,9 +316,10 @@ var runTime = new Vue({
          }
     },
     methods: {
-        refreshBelow: function(x) {
+        refreshBelow: function(x, no) {
             //alert("refreshing:" + x);
-            x.src += '';
+            x.src = '';
+            x.src = this.state["url" + no]
         },
         getStatus: function () {
             // Only check when VM is active
@@ -335,6 +337,7 @@ var runTime = new Vue({
 				// Show up report
 				var prefix = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
                 this.state.url4 = prefix + '/id/' + this.state.id + '/p/report';
+                this.state.url5 = prefix + '/id/' + this.state.id + '/p/artifacts';
                 
                 var redustot = response.data.redus.reduce(function(total, num){return total + num})
                 var assesstot = response.data.assessement.reduce(function(total, num){return total + num})
