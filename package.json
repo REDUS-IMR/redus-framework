@@ -20,20 +20,21 @@
   "dependencies": {
     "docker-cli-js": "^2.6.0",
     "dockermachine-cli-js": "^3.0.5",
+    "follow-redirects": "^1.13.0",
     "fs": "0.0.1-security",
     "http": "0.0.0",
     "http-proxy": "^1.18.1",
-    "koa": "^2.7.0",
-    "koa-body": "^4.1.0",
+    "koa": "^2.13.0",
+    "koa-body": "^4.2.0",
     "koa-compose": "^4.1.0",
-    "koa-compress": "^3.0.0",
-    "koa-send": "^5.0.0",
+    "koa-compress": "^3.1.0",
+    "koa-send": "^5.0.1",
     "os": "^0.1.1",
-    "simple-git": "^1.115.0",
+    "simple-git": "^1.132.0",
     "targz": "^1.0.1",
-    "util": "^0.12.0",
+    "util": "^0.12.3",
     "uuid": "^3.3.2",
     "xml2js": "^0.4.23",
-    "yaml": "^1.7.2"
+    "yaml": "^1.10.0"
   }
 }
