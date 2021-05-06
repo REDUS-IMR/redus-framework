@@ -1,0 +1,4 @@
+default:
+  redustools.remote: "http://astarte.imr.no/ocpu/library/REDUStools/"
+  survey: "bootstrap/initial/data/survey.dat"
+

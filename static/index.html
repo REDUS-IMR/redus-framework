@@ -36,63 +36,170 @@
 
                 <p>Assessment:
                     <select v-on:change="changeAss($event)" class="form-control" name="assessmentTitle">
+                        <option selected disabled>Choose assessment</option>
                         <option v-for="aE in assessmentTitles" v-bind:value="aE.id">{{aE.text}}</option>
-                    </select></p>
-                    <p>Year:
-                        <select v-on:change="checkValid($event)" class="form-control" name="assessmentYear">
-                            <option v-for="yr in initYear" v-bind:value="yr.text">{{yr.text}}</option>
-                        </select></p>
-                        <br />
-                        <div>
-                            <b-button variant="primary" v-bind:disabled="notValid" v-on:click="startProcess">Proceed</b-button>
-                        </div>
-                    </span>
-                    <span v-else="visible">
-                        <p class="font-weight-bold">Now working on: {{curr.ass}} {{curr.year}} <b-button variant="outline-primary"
-                            size="sm" v-on:click="changeProcess">change</b-button>
-                        </div>
-                    </span>
+                    </select>
+                </p>
+                <p>Year:
+                    <select v-on:change="changeYear($event)" class="form-control" name="assessmentYear">
+                        <option :selected="curr.year === ''" disabled>Choose year</option>
+                        <option v-for="yr in initYear" v-bind:value="yr.text">{{yr.text}}</option>
+                    </select>
+                </p>
+                <br />
+                <div>
+                    <b-button variant="primary" v-bind:disabled="notValid" v-on:click="startProcess">Run assessment now</b-button>
+                    <b-button v-b-toggle.collapse-conf variant="secondary" v-bind:disabled="notValid" v-on:click="startConfig">Configure selected assessment</b-button>
                 </div>
+                <div id="confPanel">
+                        <b-collapse id="collapse-conf" class="mt-2">
+                            <b-card>
+                                    <h3>Configure the assessement for: <b>{{curr.ass}}</b> Year: <b>{{curr.year}}</b></h3>
+                                    <div>
+                                        <b-card no-body>
+                                          <b-tabs pills card vertical>
+                                            <b-tab title="Assessment" active>
+                                                <b-card-text>Configuration of the assessment model</b-card-text>
+                                                <div v-if="configAvailable">
+                                                    
+                                                    <p>Current model: <pre>{{curr.config.assessment.model}}</pre></p>
+                                                    <p>Change to: <select v-model="curr.config.assessment.process" class="form-control">
+                                                                        <option v-for="sp in availableModel" v-bind:value="sp.value">{{sp.text}}</option>
+                                                                  </select>
+                                                    </p>
 
-                <div id="runtime" v-if="state.phase === 2">
-                        <b-tabs content-class="mt-3">
-                        <b-tab title="File Manager" :disabled="state.subprocLaunchVM !== 1" active>
-                            <b-embed type="iframe" v-bind:src="state.url1"></b-embed>
-                        </b-tab>
-                        <b-tab title="Console" :disabled="state.subprocLaunchVM !== 1">
-                            <b-embed type="iframe" v-bind:src="state.url2"></b-embed>
-                        </b-tab>
-                        <b-tab title="Logs" :disabled="state.subprocLaunchVM !== 1">
-                            <b-embed type="iframe" v-bind:src="state.url3"></b-embed>
-                        </b-tab>
-                    </b-tabs>
+                                                    <p><i class="fas fa-info-circle"></i> The above are following TAF convention, which is a github repository definition.
+                                                        Changing assessment model fucntion is still very rudimentary!</p>
+                                                </div>
+                                            </b-tab>
+                                            <b-tab title="Input data">
+                                                <b-card-text>Configuration of the available input data sources and their process</b-card-text>
+                                                <div>
+                                                        <b-tabs
+                                                            active-nav-item-class="font-weight-bold text-danger"
+                                                            content-class="mt-3"
+                                                        >
+                                                          <b-tab title="Survey data" active>
+                                                            <p>Survey title: <b v-if="configAvailable">{{getsurveyTitle()}}</b></p>
+                                                            <div v-if="configAvailable" >
+                                                            <p v-for="s in getsurveyEntries()" :key="reRenderEntries">
+                                                                {{s.fleetName}}
+                                                                <select v-model="s.process" v-bind:id="s.fleetName.split(':')[0]+'_surveyprocess'" v-on:change="surveyProcessChange($event)" class="form-control">
+                                                                        <option v-for="sp in availableSurveyProcess" v-bind:value="sp.value">{{sp.text}}</option>
+                                                                </select>
+                                                                <b-card>
+                                                                <span v-if="s.process=='asis'">
+                                                                    <span><i class="fas fa-info-circle"></i> Use the provided data in the original assessement for this fleet</span>
+                                                                </span>
+                                                                <span v-if="s.process=='remote'">
+                                                                    <span><i class="fas fa-info-circle"></i> Use the (official) pre-computed survey time series data for this fleet. The overview of the pre-computed data is
+                                                                        <a href="http://astarte.imr.no/ocpu/library/REDUStools/www/imrsts.html" target="_blank">here</a>.</span>
+                                                                    <br/><br/>Please select a survey time series:
+                                                                    <b-form-select v-model="s.remoteSource" :options="stsList"></b-form-select>
+                                                                </span>
+                                                                <span v-if="s.process=='build'">
+                                                                        <span><i class="fas fa-info-circle"></i> Rebuild survey time series data for this fleet using StoX. Please input the REDUS StoX processing configuration in textbox below.
+                                                                            An example of the configuration text can be found <a href="https://git.imr.no/snippets/8" target="_blank">here</a>.
+                                                                        </span>
+                                                                        <b-form-textarea v-model="s.buildParameters" rows="20"></b-form-textarea>
+                                                                </span>
+                                                                <span v-if="s.process=='manual'">
+                                                                    <span><i class="fas fa-info-circle"></i> Please input data for the current fleet in the textbox below</span>
+                                                                    <b-form-textarea v-model="s.data" rows="20"></b-form-textarea>
+                                                                    <span>Variance (for XSAM):</span>
+                                                                    <b-form-textarea v-model="s.data_var" rows="20"></b-form-textarea>
+                                                                </span>
+                                                            </b-card>
+                                                            </p>
+                                                            </div>
+                                                          </b-tab>
+                                                          <b-tab title="Catch data">
+                                                              <p>Not yet implemented!</p>
+                                                          </b-tab>
+                                                          <b-tab title="Other assessment input data" disabled><p>I'm a disabled tab!</p></b-tab>
+                                                        </b-tabs>
+                                                </div>
+                                            </b-tab>
+                                            <b-tab title="Misc. config" disabled></b-tab>
+                                          </b-tabs>
+                                        </b-card>
+                                      </div>
+                            </b-card>
+                        </b-collapse>
                 </div>
+            </span>
+            <span v-else="visible">
+                        <p class="font-weight-bold">Now working on: {{curr.ass}} {{curr.year}}
+                            <b-button variant="outline-primary" size="sm" v-on:click="changeProcess">change</b-button>
+                            <b-button variant="outline-danger" size="sm" v-on:click="destroyProcess">destroy</b-button>
+                        </p>
+            </span>
+           
+        </div>
 
-                <!-- Modal -->
-                <div id="modalLoading">
-                    <b-modal id="modal-body" v-model="state.globalLoading" hide-footer no-close-on-esc no-close-on-backdrop
-                    hide-header-close>
-                    <template slot="modal-title">
-                        Provisioning is in progress...
-                    </template>
-                    <div class="d-block text-center">
-                        Creating virtual machine...
-                        <b-spinner v-if="state.subprocCreateVM === -1" type="grow" label="working..."></b-spinner>
-                        <i v-if="state.subprocCreateVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
-                        <i v-if="state.subprocCreateVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
-                        Preparing files...
-                        <b-spinner v-if="state.subprocPrepareFiles === -1" type="grow" label="working..."></b-spinner>
-                        <i v-if="state.subprocPrepareFiles === 1" style="color:green" class="fas fa-check fa-2x"></i>
-                        <i v-if="state.subprocPrepareFiles === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
-                        Starting virtual machine...
-                        <b-spinner v-if="state.subprocLaunchVM === -1" type="grow" label="working..."></b-spinner>
-                        <i v-if="state.subprocLaunchVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
-                        <i v-if="state.subprocLaunchVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
-                    </div>
-                    <b-button class="mt-3" block @click="$bvModal.hide('modal-body')" :disabled="state.globalLoading === true">Close Me</b-button>
-                </b-modal>
+        <div id="runtime" v-if="state.phase === 2">
+            <div class="font-weight-bold">Status:</div>
+            <div>{{status}} <div class="led-box"> 
+		<div v-bind:class="statusled"></div>
             </div>
-            <script src="index.js"></script>
-        </body>
+            </div>
+            <br/>
+            <div>Direct URL link to this run: <pre>{{directLink}}</pre></div>
+            <hr/>
+            <b-tabs content-class="mt-3">
+                <b-tab title="File Manager" :disabled="state.subprocLaunchVM !== 1" active>
+                    <div>File manager for the current run. If the panel below is not responsive, 
+                        try to refresh by it pressing this button 
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iFmTab, 1)"></i>
+                    </div>
+                    <b-embed id="iFmTab" type="iframe" v-bind:src="state.url1"></b-embed>
+                </b-tab>
+                <b-tab title="Console" :disabled="state.subprocLaunchVM !== 1">
+                    <div>Console for the current run. If the panel below is not responsive, 
+                            try to refresh it by pressing this button 
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iCTab, 2)"></i>
+                    </div>
+                    <b-embed id="iCTab" type="iframe" v-bind:src="state.url2"></b-embed>
+                </b-tab>
+                <b-tab title="Logs" :disabled="state.subprocLaunchVM !== 1">
+                    <div>Streaming logs for the current run. If the panel below is not responsive, 
+                            try to refresh it by pressing this button 
+                        <i class="fas fa-sync-alt" v-on:click="refreshBelow(iLTab, 3)"></i>
+                    </div>    
+                    <b-embed id="iLTab" type="iframe" v-bind:src="state.url3"></b-embed>
+                </b-tab>
+		            <b-tab title="Reports" :disabled="state.subprocLaunchVM !== 1">
+                    <div v-if="notfinish">Results for the current run. Only available after the current run has finished.</div>
+                    <div v-else>Run is finished. Download the artifacts by clicking this button: <b-button variant="success" size="sm" v-bind:href="state.url5" target="_blank">Download artifacts</b-button></div>
+                    <b-embed id="iLTab" type="iframe" v-bind:src="state.url4">Not available yet!</b-embed>
+                </b-tab>
+            </b-tabs>
+        </div>
 
-        </html>
+        <!-- Modal -->
+        <div id="modalLoading">
+            <b-modal id="modal-body" v-model="state.globalLoading" hide-footer no-close-on-esc no-close-on-backdrop
+                hide-header-close>
+                <template slot="modal-title">
+                    Provisioning is in progress...
+                </template>
+                <div class="d-block text-center">
+                    Creating virtual machine...
+                    <b-spinner v-if="state.subprocCreateVM === -1" type="grow" label="working..."></b-spinner>
+                    <i v-if="state.subprocCreateVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                    <i v-if="state.subprocCreateVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                    Preparing files...
+                    <b-spinner v-if="state.subprocPrepareFiles === -1" type="grow" label="working..."></b-spinner>
+                    <i v-if="state.subprocPrepareFiles === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                    <i v-if="state.subprocPrepareFiles === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                    Starting virtual machine...
+                    <b-spinner v-if="state.subprocLaunchVM === -1" type="grow" label="working..."></b-spinner>
+                    <i v-if="state.subprocLaunchVM === 1" style="color:green" class="fas fa-check fa-2x"></i>
+                    <i v-if="state.subprocLaunchVM === 2" style="color:red" class="fas fa-times fa-2x"></i><br />
+                </div>
+                <b-button class="mt-3" block @click="store.finishLoading()" :disabled="state.subprocLaunchVM === -1">Close Me</b-button>
+            </b-modal>
+        </div>
+        <script src="index.js"></script>
+    </body>
+</html>
