@@ -24,6 +24,8 @@ var machinepool = require("./data.js")
 
 // Proxy init
 const proxy = httpProxy.createProxyServer({
+    toProxy: true,
+    changeOrigin: true,
     ws: true
 })
 
@@ -80,7 +82,15 @@ async function userProxy(ctx, next) {
         ctx.req.body = ctx.request.body
 
         await proxy.web(ctx.req, ctx.res, { target: targetUrl })
-    } else {
+    } else if (ctx.path.indexOf('\/notebook') > -1) {
+
+        var targetUrl = "http://127.0.0.1:3001"
+
+        // Forward body request
+        ctx.req.body = ctx.request.body
+
+        await proxy.web(ctx.req, ctx.res, { target: targetUrl })
+     } else {
         await next()
     }
 }

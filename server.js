@@ -17,6 +17,8 @@
     along with REDUS Framework.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+const http = require('follow-redirects').http
 const Koa = require('koa');
 
 const compress = require('koa-compress');
@@ -86,7 +88,7 @@ app.use(all);
 // Listen server
 var server
 if (!module.parent)
-    server = app.listen(globalConfig.serverPort, "0.0.0.0");
+    server = http.createServer(app.callback()).listen(globalConfig.serverPort);
 
 // For websockets
 server.on('upgrade', (req, socket, head) => {
@@ -106,8 +108,19 @@ server.on('upgrade', (req, socket, head) => {
                 console.error(e.message);
                 console.log(req.headers.host,'-->',targetUrl);
                 console.log('-----');
-              }
+            }
+        });
+    } else if (req.url.indexOf('\/notebook') > -1) {
+        var targetUrl = "http://127.0.0.1:3001"
+	console.log(req)
+        proxy.ws(req, socket, head, { target: targetUrl }, function(e){
+            if(e){
+                console.error(e.message);
+                console.log(req.headers.host,'-->',targetUrl);
+                console.log('-----');
+            }
         });
     }
+
 })
 
