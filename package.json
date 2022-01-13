@@ -20,7 +20,7 @@
   "dependencies": {
     "docker-cli-js": "^2.8.0",
     "dockermachine-cli-js": "^3.0.5",
-    "follow-redirects": "^1.14.2",
+    "follow-redirects": "^1.14.7",
     "fs": "0.0.1-security",
     "http": "0.0.0",
     "http-proxy": "^1.18.1",
